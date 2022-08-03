@@ -1,4 +1,21 @@
-/snap/clion/189/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/snap/clion/189/bin/ninja/linux/ninja -G Ninja -S /home/alessandro/CLionProjects/project_kmean -B /home/alessandro/CLionProjects/project_kmean/cmake-build-debug
+/snap/clion/203/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/snap/clion/203/bin/ninja/linux/ninja -G Ninja -S /home/alessandro/CLionProjects/project_kmean -B /home/alessandro/CLionProjects/project_kmean/cmake-build-debug
+-- The CXX compiler identification is GNU 9.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenMP_CXX: -fopenmp (found version "4.5") 
+-- Found OpenMP: TRUE (found version "4.5")  
 -- Configuring done
--- Generating done
--- Build files have been written to: /home/alessandro/CLionProjects/project_kmean/cmake-build-debug
+CMake Error at CMakeLists.txt:5 (add_executable):
+  Cannot find source file:
+
+    miscellaneous/other.cpp
+
+
+CMake Error at CMakeLists.txt:5 (add_executable):
+  No SOURCES given to target: project_kmean
+
+
+CMake Generate step failed.  Build files cannot be regenerated correctly.

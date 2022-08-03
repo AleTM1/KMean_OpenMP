@@ -11,5 +11,5 @@
 
 make clean all
 
-OMP_NUM_THREADS=4 ./project_kmean
+OMP_NUM_THREADS=8 ./project_kmean
 

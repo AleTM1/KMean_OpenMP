@@ -16,7 +16,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <vector>
 #include <sstream>
 
@@ -48,13 +47,17 @@ struct Point{
     int cluster;     // no default cluster
 
     Point():cluster(-1){
-        for (double & coordinate : coordinates)
-            coordinate = 0.;
+        to_zero();
     }
 
     explicit Point(const double coords[FEATS]) : cluster(-1){
         for (int i=0; i<FEATS; i++)
             coordinates[i] = coords[i];
+    }
+
+    void to_zero(){
+        for (double & coordinate : coordinates)
+            coordinate = 0.;
     }
 
     double compute_distance(const Point& p){
@@ -116,6 +119,20 @@ std::vector<Point> initialize_centroids(const std::vector<Point>& data, int& k){
         centroids.push_back(cent);
     }
      */
+    double c0[] = {-1, -0.2};
+    Point cent0 = Point(c0);
+    cent0.cluster = 0;
+    centroids.push_back(cent0);
+
+    double c1[] = {0.3, 0.2};
+    Point cent1 = Point(c1);
+    cent1.cluster = 1;
+    centroids.push_back(cent1);
+
+    double c2[] = {0.5, 1};
+    Point cent2 = Point(c2);
+    cent2.cluster = 2;
+    centroids.push_back(cent2);
     // TODO randomize
 
     return centroids;
@@ -124,11 +141,19 @@ std::vector<Point> initialize_centroids(const std::vector<Point>& data, int& k){
 
 std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point> centroids, int k, int epochs){
     int count = 0;
+    int clusters_size[k];
+    std::vector<Point> new_centroids = std::vector<Point>(k);
     while (count < epochs){
 
-        // assign each point to the cluster of the closest centroid
+        for (int i=0; i<k; i++) {
+            new_centroids[i].to_zero();
+            new_centroids[i].cluster = i;
+            clusters_size[i] = 0;
+        }
+
+        // assign each point to the cluster of the closest centroid, prepare the sum, increment clusters size.
         for (auto &p : data){
-            double best_distance = 1000000;
+            double best_distance = 100000;
             for (auto &c: centroids){
                 double dist = c.compute_distance(p);
                 if (dist < best_distance){
@@ -136,26 +161,13 @@ std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point>
                     p.cluster = c.cluster;
                 }
             }
-        }
-
-        // compute new centroids
-        centroids = std::vector<Point>(k);
-        int clusters_size[k];
-        for (int i=0; i<k; i++) {
-            clusters_size[i] = 0;
-            centroids[i].cluster = i;
-        }
-        for (auto &p : data) {
-            centroids[p.cluster] += p;
+            new_centroids[p.cluster] += p;
             clusters_size[p.cluster]++;
         }
+
         for (int i=0; i<k; i++)
-            centroids[i] /= clusters_size[i];
-
-        for(auto & i : centroids)
-            i.stampa();
-        std::cout << std::endl;
-
+            new_centroids[i] /= clusters_size[i];
+        centroids = new_centroids;
         count++;
     }
 
@@ -164,7 +176,7 @@ std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point>
 
 
 int main() {
-    std::string fname = "data/foo.csv";
+    std::string fname = "foo.csv";
     int k = 3;
     int epochs = 10;
     std::vector<Point> data;
@@ -172,7 +184,6 @@ int main() {
 
     data = load_csv(fname);
     centroids = initialize_centroids(data, k);
-
     centroids = kMeansClustering(data, centroids, k, epochs);
 
     for (auto &i: centroids)

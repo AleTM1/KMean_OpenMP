@@ -14,79 +14,18 @@
  *
  *****************************************************/
 
-#include <iostream>
 #include <fstream>
-#include <vector>
 #include <sstream>
+#include <omp.h>
+#include "initializer.cpp"
 
-#define FEATS 2
+//#define FEATS 10
 
 
-/*
+
+// TODO: initialize random - automatic FEATS selector - Siluoetthe score
 
 
-int main()
-{
-    double tstart, tstop;
-    tstart = omp_get_wtime();
-
-#pragma omp parallel default(none)
-    {
-        say_hello();
-    }
-
-    tstop = omp_get_wtime();
-    printf("Elapsed time: %f\n", tstop - tstart);
-    return 0;
-}
-
-*/
-
-struct Point{
-    double coordinates[FEATS]{};     // coordinates
-    int cluster;     // no default cluster
-
-    Point():cluster(-1){
-        to_zero();
-    }
-
-    explicit Point(const double coords[FEATS]) : cluster(-1){
-        for (int i=0; i<FEATS; i++)
-            coordinates[i] = coords[i];
-    }
-
-    void to_zero(){
-        for (double & coordinate : coordinates)
-            coordinate = 0.;
-    }
-
-    double compute_distance(const Point& p){
-        double total_d = 0;
-        for (int i=0; i<FEATS; i++)
-            total_d += (this->coordinates[i] - p.coordinates[i]) * (this->coordinates[i] - p.coordinates[i]);
-        return total_d;
-    }
-
-    void operator+=(const Point& p){
-        for (int i=0; i<FEATS; i++)
-            this->coordinates[i] += p.coordinates[i];
-    }
-
-    void operator/=(const int& cardinality){
-        for (double & coordinate : coordinates)
-            coordinate /= (double)cardinality;
-    }
-
-    void operator+(const Point& p){
-        for (int i=0; i<FEATS; i++)
-            this->coordinates[i] += p.coordinates[i];
-    }
-
-    void stampa(){
-        std::cout<<coordinates[0]<<" "<<coordinates[1]<<" "<<std::endl;
-    }
-
-};
 
 std::vector<Point> load_csv(const std::string& filename){
     std::vector<Point> data;
@@ -110,63 +49,70 @@ std::vector<Point> load_csv(const std::string& filename){
 }
 
 
-std::vector<Point> initialize_centroids(const std::vector<Point>& data, int& k){
-    std::vector<Point> centroids;
-    /*
-    for (int i=0; i<k; i++) {
-        Point cent = Point(data[i].coordinates);
-        cent.cluster = i;
-        centroids.push_back(cent);
-    }
-     */
-    double c0[] = {-1, -0.2};
-    Point cent0 = Point(c0);
-    cent0.cluster = 0;
-    centroids.push_back(cent0);
-
-    double c1[] = {0.3, 0.2};
-    Point cent1 = Point(c1);
-    cent1.cluster = 1;
-    centroids.push_back(cent1);
-
-    double c2[] = {0.5, 1};
-    Point cent2 = Point(c2);
-    cent2.cluster = 2;
-    centroids.push_back(cent2);
-    // TODO randomize
-
-    return centroids;
-}
-
-
-std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point> centroids, int k, int epochs){
+std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point> centroids, int k, int epochs, double eps = 0.001){
     int count = 0;
+    double rel_diff = 1.;
     int clusters_size[k];
     std::vector<Point> new_centroids = std::vector<Point>(k);
-    while (count < epochs){
 
-        for (int i=0; i<k; i++) {
-            new_centroids[i].to_zero();
-            new_centroids[i].cluster = i;
-            clusters_size[i] = 0;
+    // tmp variables
+    int partial_clusters_size[omp_get_max_threads()][k];
+    std::vector<Point> partial_new_centroids[omp_get_max_threads()];
+    double partial_rel_diff[k];
+
+    for (int i=0; i<omp_get_max_threads(); i++)
+    {
+        partial_new_centroids[i] = std::vector<Point>(k);
+        for (int j=0; j<k; j++)
+        {
+            partial_clusters_size[i][j] = 0;
+            partial_new_centroids[i][j].to_zero(j);
         }
+    }
+
+    while (count < epochs and rel_diff > eps){
 
         // assign each point to the cluster of the closest centroid, prepare the sum, increment clusters size.
-        for (auto &p : data){
-            double best_distance = 100000;
-            for (auto &c: centroids){
-                double dist = c.compute_distance(p);
-                if (dist < best_distance){
-                    best_distance = dist;
-                    p.cluster = c.cluster;
+#pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(centroids, partial_new_centroids, partial_clusters_size, data) schedule(static)
+            for(int i=0; i<data.size(); i++)
+            {
+                Point& p = data[i];
+                double best_distance = 100000;
+                for (auto &c: centroids) {
+                    double dist = c.compute_distance(p);
+                    if (dist < best_distance) {
+                        best_distance = dist;
+                        p.cluster = c.cluster;
+                    }
                 }
+                partial_new_centroids[omp_get_thread_num()][p.cluster] += p;
+                partial_clusters_size[omp_get_thread_num()][p.cluster]++;
             }
-            new_centroids[p.cluster] += p;
-            clusters_size[p.cluster]++;
+
+
+#pragma omp parallel for num_threads(k) default(none) shared(new_centroids, partial_new_centroids, partial_clusters_size, partial_rel_diff) firstprivate(centroids, clusters_size, k) schedule(static, 1)
+        for (int i=0; i < k; i++)
+        {
+            new_centroids[i].to_zero(i);
+            clusters_size[i] = 0;
+            for (int j = 0; j < omp_get_max_threads(); j++)
+            {
+                // merge partial results
+                new_centroids[i] += partial_new_centroids[j][i];
+                clusters_size[i] += partial_clusters_size[j][i];
+                // clean tmp vars
+                partial_new_centroids[j][i].to_zero(i);
+                partial_clusters_size[j][i] = 0;
+            }
+            new_centroids[i] /= clusters_size[i];  // updates directly a shared var because each thread writes in a predetermined different location (since schedule static 1 and different thread -> different i -> different locations)
+            partial_rel_diff[i] = new_centroids[i].compute_rel_diff(centroids[i]);
         }
 
-        for (int i=0; i<k; i++)
-            new_centroids[i] /= clusters_size[i];
+        rel_diff = 0.;
+        for (double& r:partial_rel_diff)
+            rel_diff += r;
+        rel_diff /= k;
+
         centroids = new_centroids;
         count++;
     }
@@ -176,18 +122,23 @@ std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point>
 
 
 int main() {
-    std::string fname = "foo.csv";
-    int k = 3;
-    int epochs = 10;
+    std::string fname = "data500000_10.csv";
+    int k = 4;
+    int epochs = 20;
     std::vector<Point> data;
     std::vector<Point> centroids;
 
     data = load_csv(fname);
+
+    double tstart, tstop;
+    tstart = omp_get_wtime();
     centroids = initialize_centroids(data, k);
     centroids = kMeansClustering(data, centroids, k, epochs);
+    tstop = omp_get_wtime();
 
+    printf("Total execution time: %f\n", tstop - tstart);
     for (auto &i: centroids)
-    i.stampa();
+        i.stampa();
 
     return 0;
 }

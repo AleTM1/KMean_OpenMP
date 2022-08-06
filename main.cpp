@@ -19,11 +19,11 @@
 #include <omp.h>
 #include "initializer.cpp"
 
-//#define FEATS 10
 
-
-
-// TODO: initialize random - automatic FEATS selector - Siluoetthe score
+// TODO: Silhouette score
+// TODO: Initialize with KMean++
+// TODO: Parser
+// TODO: Elbow Method (serial or parallel according to parser)
 
 
 
@@ -49,13 +49,15 @@ std::vector<Point> load_csv(const std::string& filename){
 }
 
 
-std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point> centroids, int k, int epochs, double eps = 0.001){
+std::vector<Point> kMeansClustering(std::vector<Point>(*init_centroids)(const std::vector<Point>&, int&), std::vector<Point>& data, int k, int epochs, double eps = 0.00001){
+    double tstart, tstop;
     int count = 0;
     double rel_diff = 1.;
     int clusters_size[k];
-    std::vector<Point> new_centroids = std::vector<Point>(k);
+    std::vector<Point> centroids = init_centroids(data, k);
 
     // tmp variables
+    std::vector<Point> new_centroids = std::vector<Point>(k);
     int partial_clusters_size[omp_get_max_threads()][k];
     std::vector<Point> partial_new_centroids[omp_get_max_threads()];
     double partial_rel_diff[k];
@@ -70,7 +72,13 @@ std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point>
         }
     }
 
-    while (count < epochs and rel_diff > eps){
+    tstart = omp_get_wtime();
+    while (rel_diff > eps){
+        if (count > epochs){
+            centroids = init_centroids(data, k); // initilize again if it does not converge
+            count = 0;
+            tstart = omp_get_wtime();
+        }
 
         // assign each point to the cluster of the closest centroid, prepare the sum, increment clusters size.
 #pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(centroids, partial_new_centroids, partial_clusters_size, data) schedule(static)
@@ -112,10 +120,14 @@ std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point>
         for (double& r:partial_rel_diff)
             rel_diff += r;
         rel_diff /= k;
+        std::cout<<rel_diff<<std::endl;
 
         centroids = new_centroids;
         count++;
     }
+
+    tstop = omp_get_wtime();
+    printf("Total execution time: %f\n", tstop - tstart);
 
     return centroids;
 }
@@ -124,19 +136,14 @@ std::vector<Point> kMeansClustering(std::vector<Point>& data, std::vector<Point>
 int main() {
     std::string fname = "data500000_10.csv";
     int k = 4;
-    int epochs = 20;
+    int epochs = 50;
     std::vector<Point> data;
     std::vector<Point> centroids;
 
     data = load_csv(fname);
 
-    double tstart, tstop;
-    tstart = omp_get_wtime();
-    centroids = initialize_centroids(data, k);
-    centroids = kMeansClustering(data, centroids, k, epochs);
-    tstop = omp_get_wtime();
+    centroids = kMeansClustering(&initialize_centroids_randomly, data, k, epochs);
 
-    printf("Total execution time: %f\n", tstop - tstart);
     for (auto &i: centroids)
         i.stampa();
 

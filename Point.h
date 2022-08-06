@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <iostream>
-#include <math.h>
+#include <cmath>
 
 #define FEATS 10
 
@@ -48,10 +48,17 @@ struct Point{
             coordinate /= (double)cardinality;
     }
 
+    bool operator==(const Point& p){
+        for (int i=0; i<FEATS; i++)
+            if (this->coordinates[i] != p.coordinates[i])
+                return false;
+        return true;
+    }
+
     double compute_rel_diff(const Point& p){
         double rel_diff = 0.;
         for (int i=0; i<FEATS; i++)
-            rel_diff += abs(this->coordinates[i] - p.coordinates[i])/this->coordinates[i];
+            rel_diff += std::abs(this->coordinates[i] - p.coordinates[i]);
         return rel_diff;
     }
 

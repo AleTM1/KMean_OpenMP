@@ -1,34 +1,52 @@
 #include "Point.h"
+#include <random>
+#include <algorithm>
 
-std::vector<Point> initialize_centroids(const std::vector<Point>& data, int& k){
+
+bool contains(std::vector<Point>& vec, Point& p){
+    for (auto & el : vec)
+        if (p == el)
+            return true;
+    return false;
+}
+
+
+std::vector<Point> initialize_centroids_randomly(const std::vector<Point>& data, int& k) {
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<> distrib(0, data.size());
     std::vector<Point> centroids;
-    /*
-    for (int i=0; i<k; i++) {
-        Point cent = Point(data[i].coordinates);
-        cent.cluster = i;
-        centroids.push_back(cent);
+
+    int clust = 0;
+    while (centroids.size() < k) {
+        Point sel_elem = data[distrib(gen)];
+        if (!contains(centroids, sel_elem))
+        {
+            sel_elem.cluster = clust++;
+            centroids.push_back(sel_elem);
+        }
     }
-     */
-    double c0[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-    Point cent0 = Point(c0);
-    cent0.cluster = 0;
-    centroids.push_back(cent0);
+    return centroids;
+}
 
-    double c1[] = {0., 0.2, -0.2, 0.2, -0.2, .3, 0.2, -0.2, 0.2, -0.2};
-    Point cent1 = Point(c1);
-    cent1.cluster = 1;
-    centroids.push_back(cent1);
+std::vector<Point> initialize_centroids_kmeanpp(const std::vector<Point>& data, int& k) {
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<> distrib(0, data.size());
 
-    double c2[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    Point cent2 = Point(c2);
-    cent2.cluster = 2;
-    centroids.push_back(cent2);
+    std::vector<Point> centroids;
+    Point starting_point = data[distrib(gen)];
+    starting_point.cluster = 0;
+    centroids.push_back(starting_point);
 
-    double c3[] = {1, 1, 1, 1, 1,0,0,0,0,0};
-    Point cent3 = Point(c3);
-    cent3.cluster = 3;
-    centroids.push_back(cent3);
-    // TODO randomize
-
+    int clust = 1;
+    while (centroids.size() < k) {
+        Point sel_elem = data[distrib(gen)];
+        if (!contains(centroids, sel_elem))
+        {
+            sel_elem.cluster = clust++;
+            centroids.push_back(sel_elem);
+        }
+    }
     return centroids;
 }

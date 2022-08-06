@@ -16,15 +16,13 @@
 
 #include <fstream>
 #include <sstream>
-#include <omp.h>
 #include "initializer.cpp"
 
 
 // TODO: Silhouette score
-// TODO: Initialize with KMean++
+// TODO: check parallel for kmean++
 // TODO: Parser
 // TODO: Elbow Method (serial or parallel according to parser)
-
 
 
 std::vector<Point> load_csv(const std::string& filename){
@@ -72,19 +70,20 @@ std::vector<Point> kMeansClustering(std::vector<Point>(*init_centroids)(const st
         }
     }
 
+    int try_num = 1;
     tstart = omp_get_wtime();
     while (rel_diff > eps){
         if (count > epochs){
-            centroids = init_centroids(data, k); // initilize again if it does not converge
+            centroids = init_centroids(data, k); // initialize again if it does not converge
             count = 0;
+            try_num++;
             tstart = omp_get_wtime();
         }
 
         // assign each point to the cluster of the closest centroid, prepare the sum, increment clusters size.
 #pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(centroids, partial_new_centroids, partial_clusters_size, data) schedule(static)
-            for(int i=0; i<data.size(); i++)
+            for(auto & p : data)
             {
-                Point& p = data[i];
                 double best_distance = 100000;
                 for (auto &c: centroids) {
                     double dist = c.compute_distance(p);
@@ -127,7 +126,8 @@ std::vector<Point> kMeansClustering(std::vector<Point>(*init_centroids)(const st
     }
 
     tstop = omp_get_wtime();
-    printf("Total execution time: %f\n", tstop - tstart);
+    printf("Attempt number: %d\n", try_num);
+    printf("Clustering execution time: %f\n", tstop - tstart);
 
     return centroids;
 }
@@ -142,7 +142,12 @@ int main() {
 
     data = load_csv(fname);
 
-    centroids = kMeansClustering(&initialize_centroids_randomly, data, k, epochs);
+    double tstart, tstop;
+    tstart = omp_get_wtime();
+    centroids = kMeansClustering(&initialize_centroids_kmeanpp, data, k, epochs);
+    // centroids = kMeansClustering(&initialize_centroids_randomly, data, k, epochs);
+    tstop = omp_get_wtime();
+    printf("Total execution time: %f\n", tstop - tstart);
 
     for (auto &i: centroids)
         i.stampa();

@@ -1,5 +1,6 @@
 #include "Point.h"
 #include <random>
+#include <iterator>
 #include <algorithm>
 
 
@@ -12,6 +13,9 @@ bool contains(std::vector<Point>& vec, Point& p){
 
 
 std::vector<Point> initialize_centroids_randomly(const std::vector<Point>& data, int& k) {
+    double tstart, tstop;
+    tstart = omp_get_wtime();
+
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<> distrib(0, data.size());
@@ -26,12 +30,18 @@ std::vector<Point> initialize_centroids_randomly(const std::vector<Point>& data,
             centroids.push_back(sel_elem);
         }
     }
+    tstop = omp_get_wtime();
+    printf("Random Initialization execution time: %f\n", tstop - tstart);
+
     return centroids;
 }
 
 std::vector<Point> initialize_centroids_kmeanpp(const std::vector<Point>& data, int& k) {
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    double tstart, tstop;
+    tstart = omp_get_wtime();
+
+    std::random_device rd;       // Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd());   // Standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<> distrib(0, data.size());
 
     std::vector<Point> centroids;
@@ -39,14 +49,39 @@ std::vector<Point> initialize_centroids_kmeanpp(const std::vector<Point>& data, 
     starting_point.cluster = 0;
     centroids.push_back(starting_point);
 
-    int clust = 1;
-    while (centroids.size() < k) {
-        Point sel_elem = data[distrib(gen)];
-        if (!contains(centroids, sel_elem))
-        {
-            sel_elem.cluster = clust++;
-            centroids.push_back(sel_elem);
+    for (int i=1; i<k; i++) {
+        double max_dist = 0.;
+        Point next_point;
+        // find the farthest point from its closest centroid
+        double partial_max_dist[omp_get_max_threads()];
+        for (double& el:partial_max_dist)
+            el = 0.;
+        Point partial_next_point[omp_get_max_threads()];
+#pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(partial_max_dist, partial_next_point) firstprivate(centroids, data) schedule(static, 1)
+        for (const Point& el:data) {
+            double min_dist = 1000000000;
+            for (const Point& c:centroids) {
+                double d = el.compute_distance(c);
+                if (d < min_dist)
+                    min_dist = d;
+            }
+            if (min_dist > partial_max_dist[omp_get_thread_num()]){
+                partial_max_dist[omp_get_thread_num()] = min_dist;
+                partial_next_point[omp_get_thread_num()] = el;
+            }
         }
+
+        for (int j=0; j<omp_get_max_threads(); j++){
+            if (partial_max_dist[j] > max_dist){
+                max_dist = partial_max_dist[j];
+                next_point = partial_next_point[j];
+            }
+        }
+        next_point.cluster = i;
+        centroids.push_back(next_point);
     }
+    tstop = omp_get_wtime();
+    printf("KMean++ Initialization execution time: %f\n", tstop - tstart);
+
     return centroids;
 }

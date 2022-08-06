@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include <omp.h>
 
 #define FEATS 10
 
@@ -31,7 +32,7 @@ struct Point{
             coordinate = 0.;
     }
 
-    double compute_distance(const Point& p){
+    double compute_distance(const Point& p) const {
         double total_d = 0;
         for (int i=0; i<FEATS; i++)
             total_d += (this->coordinates[i] - p.coordinates[i]) * (this->coordinates[i] - p.coordinates[i]);
@@ -48,14 +49,14 @@ struct Point{
             coordinate /= (double)cardinality;
     }
 
-    bool operator==(const Point& p){
+    bool operator==(const Point& p) const {
         for (int i=0; i<FEATS; i++)
             if (this->coordinates[i] != p.coordinates[i])
                 return false;
         return true;
     }
 
-    double compute_rel_diff(const Point& p){
+    double compute_rel_diff(const Point& p) const {
         double rel_diff = 0.;
         for (int i=0; i<FEATS; i++)
             rel_diff += std::abs(this->coordinates[i] - p.coordinates[i]);

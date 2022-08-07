@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=nomejob
+#SBATCH --job-name=kmean_proj
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=alessandro.maggio5@studio.unibo.it
 #SBATCH --time=01:00:00
@@ -11,5 +11,5 @@
 
 make clean all
 
-OMP_NUM_THREADS=16 ./project_kmean
+./project_kmean 'data500000_10.csv' 4 'kmeanpp'
 

@@ -1,51 +1,19 @@
 /****************************************************
  *
- * Check CMake ->
- * program name: main.cpp
- * executable name: project_kmean
- *
- * ************************
- *
  * Compile with:
  * g++ -fopenmp main.cpp -o project_kmean
  *
  * Run with:
- * OMP_NUM_THREADS=8 ./project_kmean
+ * ./project_kmean <input.csv> <num_threads> <initialization_alg>('random', 'kmeanpp')
  *
  *****************************************************/
 
-#include <fstream>
-#include <sstream>
-#include "initializer.cpp"
 
+#include "initializer.cpp"
+#include "misc.cpp"
 
 // TODO: Silhouette score
-// TODO: check parallel for kmean++
-// TODO: Parser
 // TODO: Elbow Method (serial or parallel according to parser)
-
-
-std::vector<Point> load_csv(const std::string& filename){
-    std::vector<Point> data;
-    double row[FEATS];
-    std::string line, word;
-    std::fstream file (filename, std::ios::in);
-    if(file.is_open())
-    {
-        while(getline(file, line))
-        {
-            std::stringstream str(line);
-            int i = 0;
-            while(getline(str, word, ','))
-                row[i++] = std::stod(word);
-            data.emplace_back(row);
-        }
-    }
-    else
-        std::cout<<"Could not open the file\n";
-    return data;
-}
-
 
 std::vector<Point> kMeansClustering(std::vector<Point>(*init_centroids)(const std::vector<Point>&, int&), std::vector<Point>& data, int k, int epochs, double eps = 0.00001){
     double tstart, tstop;
@@ -133,22 +101,32 @@ std::vector<Point> kMeansClustering(std::vector<Point>(*init_centroids)(const st
 }
 
 
-int main() {
-    std::string fname = "data500000_10.csv";
+int main(int argc, const char *argv[]) {
+    omp_set_dynamic(0);
     int k = 4;
     int epochs = 50;
-    std::vector<Point> data;
+
+    // parsing arguments
+    if (argc < 3) {
+        std::cerr << "usage: project_kmean <input.csv> <num_thread> <initialization>" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    std::string fname = argv[1];
+    omp_set_num_threads(atoi(argv[2]));
+    std::vector<Point> (*init_centroids) (const std::vector<Point>&, int&) = (std::string(argv[3]) == "random") ? &initialize_centroids_randomly: &initialize_centroids_kmeanpp;
+
+    // load data
+    std::vector<Point> data = load_csv(fname);
     std::vector<Point> centroids;
 
-    data = load_csv(fname);
-
+    // start clustering
     double tstart, tstop;
     tstart = omp_get_wtime();
-    centroids = kMeansClustering(&initialize_centroids_kmeanpp, data, k, epochs);
-    // centroids = kMeansClustering(&initialize_centroids_randomly, data, k, epochs);
+    centroids = kMeansClustering(init_centroids, data, k, epochs);
     tstop = omp_get_wtime();
     printf("Total execution time: %f\n", tstop - tstart);
 
+    std::cout<<std::endl;
     for (auto &i: centroids)
         i.stampa();
 

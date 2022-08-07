@@ -1,6 +1,5 @@
 #include "Point.h"
 #include <random>
-#include <iterator>
 #include <algorithm>
 
 
@@ -35,6 +34,8 @@ std::vector<Point> initialize_centroids_randomly(const std::vector<Point>& data,
 
     return centroids;
 }
+
+
 
 std::vector<Point> initialize_centroids_kmeanpp(const std::vector<Point>& data, int& k) {
     double tstart, tstop;

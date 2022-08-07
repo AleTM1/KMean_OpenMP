@@ -6,6 +6,8 @@
 #define PROJECT_KMEAN_POINT_H
 
 #include <vector>
+#include <fstream>
+#include <sstream>
 #include <iostream>
 #include <cmath>
 #include <omp.h>

@@ -61,6 +61,12 @@ build CMakeFiles/project_kmean.dir/initializer.cpp.o: CXX_COMPILER__project_kmea
   OBJECT_DIR = CMakeFiles/project_kmean.dir
   OBJECT_FILE_DIR = CMakeFiles/project_kmean.dir
 
+build CMakeFiles/project_kmean.dir/misc.cpp.o: CXX_COMPILER__project_kmean_Debug /home/alessandro/CLionProjects/project_kmean/misc.cpp || cmake_object_order_depends_target_project_kmean
+  DEP_FILE = CMakeFiles/project_kmean.dir/misc.cpp.o.d
+  FLAGS = -g
+  OBJECT_DIR = CMakeFiles/project_kmean.dir
+  OBJECT_FILE_DIR = CMakeFiles/project_kmean.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target project_kmean
@@ -69,7 +75,7 @@ build CMakeFiles/project_kmean.dir/initializer.cpp.o: CXX_COMPILER__project_kmea
 #############################################
 # Link the executable project_kmean
 
-build project_kmean: CXX_EXECUTABLE_LINKER__project_kmean_Debug CMakeFiles/project_kmean.dir/main.cpp.o CMakeFiles/project_kmean.dir/initializer.cpp.o
+build project_kmean: CXX_EXECUTABLE_LINKER__project_kmean_Debug CMakeFiles/project_kmean.dir/main.cpp.o CMakeFiles/project_kmean.dir/initializer.cpp.o CMakeFiles/project_kmean.dir/misc.cpp.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/project_kmean.dir
   POST_BUILD = :

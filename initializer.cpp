@@ -1,6 +1,4 @@
 #include "Point.h"
-#include <random>
-#include <algorithm>
 
 
 bool contains(std::vector<Point>& vec, Point& p){
@@ -58,7 +56,7 @@ std::vector<Point> initialize_centroids_kmeanpp(const std::vector<Point>& data, 
         for (double& el:partial_max_dist)
             el = 0.;
         Point partial_next_point[omp_get_max_threads()];
-#pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(partial_max_dist, partial_next_point) firstprivate(centroids, data) schedule(static, 1)
+#pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(partial_max_dist, partial_next_point) firstprivate(centroids, data) schedule(static, 64)
         for (const Point& el:data) {
             double min_dist = 1000000000;
             for (const Point& c:centroids) {

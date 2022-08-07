@@ -11,8 +11,10 @@
 #include <iostream>
 #include <cmath>
 #include <omp.h>
+#include <random>
+#include <algorithm>
 
-#define FEATS 10
+#define FEATS 5
 
 
 struct Point{
@@ -63,12 +65,6 @@ struct Point{
         for (int i=0; i<FEATS; i++)
             rel_diff += std::abs(this->coordinates[i] - p.coordinates[i]);
         return rel_diff;
-    }
-
-    void stampa(){
-        for (auto &i: coordinates)
-            std::cout<<i<<" ";
-        std::cout<<std::endl;
     }
 
 };

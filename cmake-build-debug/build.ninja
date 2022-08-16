@@ -67,6 +67,18 @@ build CMakeFiles/project_kmean.dir/misc.cpp.o: CXX_COMPILER__project_kmean_Debug
   OBJECT_DIR = CMakeFiles/project_kmean.dir
   OBJECT_FILE_DIR = CMakeFiles/project_kmean.dir
 
+build CMakeFiles/project_kmean.dir/base_kmean.cpp.o: CXX_COMPILER__project_kmean_Debug /home/alessandro/CLionProjects/project_kmean/base_kmean.cpp || cmake_object_order_depends_target_project_kmean
+  DEP_FILE = CMakeFiles/project_kmean.dir/base_kmean.cpp.o.d
+  FLAGS = -g
+  OBJECT_DIR = CMakeFiles/project_kmean.dir
+  OBJECT_FILE_DIR = CMakeFiles/project_kmean.dir
+
+build CMakeFiles/project_kmean.dir/kmedoids.cpp.o: CXX_COMPILER__project_kmean_Debug /home/alessandro/CLionProjects/project_kmean/kmedoids.cpp || cmake_object_order_depends_target_project_kmean
+  DEP_FILE = CMakeFiles/project_kmean.dir/kmedoids.cpp.o.d
+  FLAGS = -g
+  OBJECT_DIR = CMakeFiles/project_kmean.dir
+  OBJECT_FILE_DIR = CMakeFiles/project_kmean.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target project_kmean
@@ -75,7 +87,7 @@ build CMakeFiles/project_kmean.dir/misc.cpp.o: CXX_COMPILER__project_kmean_Debug
 #############################################
 # Link the executable project_kmean
 
-build project_kmean: CXX_EXECUTABLE_LINKER__project_kmean_Debug CMakeFiles/project_kmean.dir/main.cpp.o CMakeFiles/project_kmean.dir/initializer.cpp.o CMakeFiles/project_kmean.dir/misc.cpp.o
+build project_kmean: CXX_EXECUTABLE_LINKER__project_kmean_Debug CMakeFiles/project_kmean.dir/main.cpp.o CMakeFiles/project_kmean.dir/initializer.cpp.o CMakeFiles/project_kmean.dir/misc.cpp.o CMakeFiles/project_kmean.dir/base_kmean.cpp.o CMakeFiles/project_kmean.dir/kmedoids.cpp.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/project_kmean.dir
   POST_BUILD = :

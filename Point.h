@@ -1,6 +1,3 @@
-//
-// Created by alessandro on 05/08/22.
-//
 
 #ifndef PROJECT_KMEAN_POINT_H
 #define PROJECT_KMEAN_POINT_H

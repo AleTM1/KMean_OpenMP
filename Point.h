@@ -11,7 +11,7 @@
 #include <random>
 #include <algorithm>
 
-#define FEATS 5
+#define FEATS 2
 
 
 struct Point{
@@ -25,6 +25,12 @@ struct Point{
     explicit Point(const double coords[FEATS]) : cluster(-1){
         for (int i=0; i<FEATS; i++)
             coordinates[i] = coords[i];
+    }
+
+    Point(const Point& p1){
+        for (int i=0; i<FEATS; i++)
+            coordinates[i] = p1.coordinates[i];
+        cluster = p1.cluster;
     }
 
     void to_zero(int i){

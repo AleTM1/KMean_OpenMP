@@ -4,15 +4,30 @@
 
 #include "base_kmean.cpp"
 
+void assign_closest_cluster(std::vector<Point>& data, std::vector<Point>& centroids){
+    for (Point& p : data){
+        double min_dist = 1000000;
+        for (const Point& c : centroids){
+            double d = p.compute_distance(c);
+            if (d < min_dist){
+                min_dist = d;
+                p.cluster = c.cluster;
+            }
+        }
+    }
+}
+
+
 std::vector<Point> kMedoidsClustering(std::vector<Point>(*init_centroids)(const std::vector<Point>&, int&), std::vector<Point>& data, int k, int epochs, double eps = 0.00001){
     double tstart, tstop;
     int count = 0;
     double rel_diff = 1.;
-    int clusters_size[k];
     std::vector<Point> centroids = init_centroids(data, k);
 
+    assign_closest_cluster(data, centroids);
+
     // tmp variables
-    std::vector<Point> new_centroids = std::vector<Point>(k);
+    /*std::vector<Point> new_centroids = std::vector<Point>(k);
     int partial_clusters_size[omp_get_max_threads()][k];
     std::vector<Point> partial_new_centroids[omp_get_max_threads()];
     double partial_rel_diff[k];
@@ -26,64 +41,55 @@ std::vector<Point> kMedoidsClustering(std::vector<Point>(*init_centroids)(const 
             partial_new_centroids[i][j].to_zero(j);
         }
     }
+     */
 
+    double current_sse = compute_sse(data, centroids);
+    int size = (int)data.size();
+    int total_count = (int)pow((double)size, (double)k);
     int try_num = 1;
     tstart = omp_get_wtime();
-    while (rel_diff > eps){
-        if (count > epochs){
+    while (count < total_count){
+        if (false){
             centroids = init_centroids(data, k); // initialize again if it does not converge
             count = 0;
             try_num++;
             tstart = omp_get_wtime();
         }
 
-        // assign each point to the cluster of the closest centroid, prepare the sum, increment clusters size.
-#pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(centroids, partial_new_centroids, partial_clusters_size, data) schedule(static, 64)
-            for(auto & p : data)
-            {
-                double best_distance = 100000;
-                for (auto &c: centroids) {
-                    double dist = c.compute_distance(p);
-                    if (dist < best_distance) {
-                        best_distance = dist;
-                        p.cluster = c.cluster;
-                    }
-                }
-                partial_new_centroids[omp_get_thread_num()][p.cluster] += p;
-                partial_clusters_size[omp_get_thread_num()][p.cluster]++;
-            }
-
-
-#pragma omp parallel for num_threads(k) default(none) shared(new_centroids, partial_new_centroids, partial_clusters_size, partial_rel_diff) firstprivate(centroids, clusters_size, k) schedule(static, 64)
-        for (int i=0; i < k; i++)
-        {
-            new_centroids[i].to_zero(i);
-            clusters_size[i] = 0;
-            for (int j = 0; j < omp_get_max_threads(); j++)
-            {
-                // merge partial results
-                new_centroids[i] += partial_new_centroids[j][i];
-                clusters_size[i] += partial_clusters_size[j][i];
-                // clean tmp vars
-                partial_new_centroids[j][i].to_zero(i);
-                partial_clusters_size[j][i] = 0;
-            }
-            new_centroids[i] /= clusters_size[i];  // updates directly a shared var because each thread writes in a predetermined different location (since schedule static 1 and different thread -> different i -> different locations)
-            partial_rel_diff[i] = new_centroids[i].compute_rel_diff(centroids[i]);
+        int value = count;
+        int pos = 0;
+        int idxes[k];
+        while (pos < k){
+            idxes[pos++] = value % size;
+            value = (value - (value % size))/size;
         }
 
-        rel_diff = 0.;
-        for (double& r:partial_rel_diff)
-            rel_diff += r;
-        rel_diff /= k;
+        bool check = true;
+        for (int i=0; i<k-1; i++)
+            for (int j=i+1; j<k; j++)
+                if (idxes[i] == idxes[j])
+                    check = false;
 
-        centroids = new_centroids;
+        if (check) {
+            std::vector<Point> new_centroids;
+            for (auto i: idxes)
+                new_centroids.push_back(data[i]);
+            assign_closest_cluster(data, new_centroids);
+            double new_sse = compute_sse(data, new_centroids);
+            if (new_sse > current_sse) {
+                current_sse = new_sse;
+                centroids = new_centroids;
+            }
+        }
+
         count++;
+        std::cout<<count<<std::endl;
     }
 
     tstop = omp_get_wtime();
     printf("Attempt number: %d\n", try_num);
     printf("Clustering execution time: %f\n", tstop - tstart);
 
+    assign_closest_cluster(data, centroids);
     return centroids;
 }

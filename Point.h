@@ -11,7 +11,7 @@
 #include <random>
 #include <algorithm>
 
-#define FEATS 2
+#define FEATS 3
 
 
 struct Point{

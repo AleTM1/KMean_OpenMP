@@ -45,7 +45,7 @@ int main(int argc, const char *argv[]) {
     double sse = compute_sse(data, centroids);
     printf("SSE: %f\n", sse);
 
-    for (auto e:centroids) {
+    for (auto& e:centroids) {
         std::cout<<std::endl;
         for (auto f: e.coordinates)
             std::cout << f << " ";

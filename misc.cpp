@@ -21,7 +21,7 @@ std::vector<Point> load_csv(const std::string& filename){
     return data;
 }
 
-double compute_sse(std::vector<Point>& data, std::vector<Point>& centroids){
+double compute_silhouette(std::vector<Point>& data, std::vector<Point>& centroids){
     unsigned k = centroids.size();
     double partial_sse_score[omp_get_max_threads()];
     double sse_score;
@@ -35,7 +35,7 @@ double compute_sse(std::vector<Point>& data, std::vector<Point>& centroids){
 
     // compute an array of the neighbor cluster for each centroid
     for (int i=0; i<k; i++) {
-        double min_dist = 10000000;
+        double min_dist = DBL_MAX;
         for (int j = 0; j < k; j++) {
             double d = centroids[i].compute_distance(centroids[j]);
             if (i != j and d < min_dist) {
@@ -45,6 +45,8 @@ double compute_sse(std::vector<Point>& data, std::vector<Point>& centroids){
         }
     }
 
+    double tstart, tstop;
+    tstart = omp_get_wtime();
 #pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(partial_sse_score) firstprivate(data, centroids_points, cluster_neighbor) schedule(static, 64)
     for (const Point& p_ref : data){
         int c = p_ref.cluster;
@@ -62,6 +64,8 @@ double compute_sse(std::vector<Point>& data, std::vector<Point>& centroids){
         // compute p_ref silhouette
         partial_sse_score[omp_get_thread_num()] += (b - a) / std::max(a, b);
     }
+    tstop = omp_get_wtime();
+    printf("Silhouette execution time: %f\n", tstop - tstart);
 
     sse_score = std::accumulate(partial_sse_score, partial_sse_score + omp_get_max_threads(), 0.);
     sse_score /= (double)data.size();

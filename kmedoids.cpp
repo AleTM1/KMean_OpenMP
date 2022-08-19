@@ -6,7 +6,7 @@
 
 std::vector<Point> assign_closest_cluster(std::vector<Point>& data, std::vector<Point>& centroids){
     for (Point& p : data){
-        double min_dist = 1000000;
+        double min_dist = DBL_MAX;
         for (const Point& c : centroids){
             double d = p.compute_distance(c);
             if (d < min_dist){
@@ -37,7 +37,7 @@ std::vector<Point> kMedoidsClustering(std::vector<Point>(*init_centroids)(const 
 
         for (int i=0; i<omp_get_max_threads(); i++)
             for (int j=0; j<k; j++)
-                partial_min_distances[i][j] = 10000000.;
+                partial_min_distances[i][j] = DBL_MAX;
 
 #pragma omp parallel for num_threads(omp_get_max_threads()) default(none) firstprivate(data) shared(partial_new_centroids, partial_min_distances) schedule(static, 128)
         for (auto& p1 : data){

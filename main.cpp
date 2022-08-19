@@ -15,10 +15,10 @@
 
 int main(int argc, const char *argv[]) {
     omp_set_dynamic(0);
-    int epochs = 5;
+    int epochs = 10;
 
     // parsing arguments
-    if (argc < 3) {
+    if (argc < 5) {
         std::cerr << "usage: project_kmean <input.csv> <kmean_variant> <num_thread> <k> <initialization>" << std::endl;
         exit(EXIT_FAILURE);
     }
@@ -42,13 +42,13 @@ int main(int argc, const char *argv[]) {
     tstop = omp_get_wtime();
     printf("Total execution time: %f\n", tstop - tstart);
 
-    double sse = compute_sse(data, centroids);
-    printf("SSE: %f\n", sse);
+    double sil = compute_silhouette(data, centroids);
+    printf("Silhouette score: %f\n", sil);
 
-    for (auto& e:centroids) {
+    for (auto& c:centroids) {
         std::cout<<std::endl;
-        for (auto f: e.coordinates)
-            std::cout << f << " ";
+        for (auto v: c.coordinates)
+            std::cout << v << " ";
     }
     std::cout<<std::endl;
 

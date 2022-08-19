@@ -41,7 +41,7 @@ std::vector<Point> kMeansClustering(std::vector<Point>(*init_centroids)(const st
 #pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(centroids, partial_new_centroids, partial_clusters_size, data) schedule(static, 64)
             for(auto & p : data)
             {
-                double best_distance = 100000;
+                double best_distance = DBL_MAX;
                 for (auto &c: centroids) {
                     double dist = c.compute_distance(p);
                     if (dist < best_distance) {
@@ -83,6 +83,7 @@ std::vector<Point> kMeansClustering(std::vector<Point>(*init_centroids)(const st
 
     tstop = omp_get_wtime();
     printf("Attempt number: %d\n", try_num);
+    printf("Cycles for converging: %d\n", count);
     printf("Clustering execution time: %f\n", tstop - tstart);
 
     return centroids;

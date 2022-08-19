@@ -10,6 +10,7 @@
 #include <omp.h>
 #include <random>
 #include <algorithm>
+#include <cfloat>
 
 #define FEATS 3
 

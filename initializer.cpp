@@ -58,7 +58,7 @@ std::vector<Point> initialize_centroids_kmeanpp(const std::vector<Point>& data, 
         Point partial_next_point[omp_get_max_threads()];
 #pragma omp parallel for num_threads(omp_get_max_threads()) default(none) shared(partial_max_dist, partial_next_point) firstprivate(centroids, data) schedule(static, 64)
         for (const Point& el:data) {
-            double min_dist = 1000000000;
+            double min_dist = DBL_MAX;
             for (const Point& c:centroids) {
                 double d = el.compute_distance(c);
                 if (d < min_dist)
